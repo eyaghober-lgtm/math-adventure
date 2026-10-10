@@ -6,6 +6,7 @@ export interface GameRec { plays: number; best: number; last: number }
 
 export interface AppState {
   lang: Lang;
+  layout: 'school' | 'classic';
   facts: Record<string, FactStat>;
   lessons: Record<string, number>;
   practice: Record<string, PracticeRec>;
@@ -19,6 +20,7 @@ export const MAX_BOX = 4;
 
 export const initialState = (): AppState => ({
   lang: 'en',
+  layout: 'school',
   facts: {},
   lessons: {},
   practice: {},

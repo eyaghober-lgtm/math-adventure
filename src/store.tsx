@@ -7,6 +7,8 @@ interface Ctx {
   update: (fn: (s: AppState) => AppState) => void;
   lang: Lang;
   setLang: (l: Lang) => void;
+  layout: 'school' | 'classic';
+  setLayout: (l: 'school' | 'classic') => void;
   t: (k: Key) => string;
 }
 const C = createContext<Ctx | null>(null);
@@ -22,7 +24,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const update = useCallback((fn: (s: AppState) => AppState) => setState(fn), []);
   const setLang = useCallback((l: Lang) => setState((s) => ({ ...s, lang: l })), []);
   const t = useCallback((k: Key) => tr(lang, k), [lang]);
-  const value = useMemo(() => ({ state, update, lang, setLang, t }), [state, update, lang, setLang, t]);
+  const layout = state.layout ?? 'school';
+  const setLayout = useCallback((l: 'school' | 'classic') => setState((s) => ({ ...s, layout: l })), []);
+  const value = useMemo(() => ({ state, update, lang, setLang, layout, setLayout, t }), [state, update, lang, setLang, layout, setLayout, t]);
   return <C.Provider value={value}>{children}</C.Provider>;
 }
 

@@ -4,7 +4,7 @@ import { solve, type Cell, type StepKind } from '../lib/longDivision';
 import { explainCell, explainStep } from '../i18n/explain';
 import { M, type Key } from '../i18n/strings';
 import { Rich, useApp } from '../store';
-import { AnimatedDivisionStep } from './AnimatedDivisionStep';
+import { AnimatedDivisionStep, LayoutSwitch } from './AnimatedDivisionStep';
 import { DivisionPicture } from './DivisionPicture';
 
 const SPEEDS = [0.5, 1, 1.5, 2];
@@ -46,7 +46,8 @@ interface Props {
 }
 
 export function LongDivisionEngine({ n, d, onComplete, showPicture = true }: Props) {
-  const { t, lang } = useApp();
+  const { t, lang, layout } = useApp();
+  const school = layout === 'school';
   const sol = useMemo(() => solve(n, d), [n, d]);
   const last = sol.steps.length - 1;
   const [step, setStep] = useState(0);
@@ -71,7 +72,7 @@ export function LongDivisionEngine({ n, d, onComplete, showPicture = true }: Pro
   }, [step, last, onComplete]);
 
   const cur = sol.steps[step];
-  const ex = explainStep(cur, sol, lang);
+  const ex = explainStep(cur, sol, lang, school);
   const go = (i: number) => { setPlaying(false); setStep(Math.max(0, Math.min(last, i))); setInspect(null); };
   const togglePlay = () => {
     if (!playing && step >= last) { setStep(0); setInspect(null); }
@@ -82,6 +83,7 @@ export function LongDivisionEngine({ n, d, onComplete, showPicture = true }: Pro
   return (
     <div className="ld-player">
       <DmsbrChips active={cur.kind} />
+      <LayoutSwitch />
 
       <div className="ld-grid">
         <div className="ld-stage card">
@@ -111,7 +113,7 @@ export function LongDivisionEngine({ n, d, onComplete, showPicture = true }: Pro
           {inspect && (
             <div className="inspect card k-note">
               <b>{t('youTapped')} <span className="math">{inspect.text}</span></b>
-              <p><Rich text={explainCell(inspect, step, sol, lang)} /></p>
+              <p><Rich text={explainCell(inspect, step, sol, lang, school)} /></p>
             </div>
           )}
         </div>

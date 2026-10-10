@@ -3,7 +3,7 @@ import { buildPrompts, solve } from '../lib/longDivision';
 import { confetti } from '../lib/confetti';
 import { promptText } from '../i18n/explain';
 import { useApp } from '../store';
-import { AnimatedDivisionStep } from './AnimatedDivisionStep';
+import { AnimatedDivisionStep, LayoutSwitch } from './AnimatedDivisionStep';
 import { PracticeQuestion, type Status } from './PracticeQuestion';
 import { DmsbrChips } from './LongDivisionEngine';
 
@@ -20,7 +20,7 @@ interface Props {
  * that powers the lessons, so what the student sees is always mathematically exact.
  */
 export function GuidedSolver({ n, d, startPrompt = 0, onSolved }: Props) {
-  const { t, lang } = useApp();
+  const { t, lang, layout } = useApp();
   const sol = useMemo(() => solve(n, d), [n, d]);
   const prompts = useMemo(() => buildPrompts(sol), [sol]);
   const [pi, setPi] = useState(startPrompt);
@@ -47,7 +47,7 @@ export function GuidedSolver({ n, d, startPrompt = 0, onSolved }: Props) {
   }, [solved, totalWrong, onSolved]);
 
   const prompt = prompts[Math.min(pi, prompts.length - 1)];
-  const text = promptText(prompt, sol, lang);
+  const text = promptText(prompt, sol, lang, layout === 'school');
   const hint = hintLevel === 0 ? null : hintLevel === 1 ? text.hint1 : text.hint2;
 
   const advance = () => {
@@ -75,6 +75,7 @@ export function GuidedSolver({ n, d, startPrompt = 0, onSolved }: Props) {
   return (
     <div className="guided">
       <DmsbrChips active={solved ? 'done' : null} />
+      <LayoutSwitch />
       <div className="ld-grid">
         <div className="ld-stage card">
           <div className="ld-labels"><span><b className="math">{n} ÷ {d}</b></span></div>

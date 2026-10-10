@@ -11,7 +11,7 @@ export function placeName(place: number, lang: Lang): string {
 
 export interface Explanation { title: string; lines: string[]; why?: string }
 
-export function explainStep(s: Step, sol: Solution, lang: Lang): Explanation {
+export function explainStep(s: Step, sol: Solution, lang: Lang, school = false): Explanation {
   const p = s.params;
   const A = ar(lang);
   switch (s.kind) {
@@ -95,17 +95,23 @@ export function explainStep(s: Step, sol: Solution, lang: Lang): Explanation {
         A
           ? `قدّر بالضرب: ${M(`${p.d} × ${p.q} = ${p.d! * p.q!}`)} يتسع، لكن ${M(`${p.d} × ${p.q! + 1} = ${p.over}`)} أكبر من ${M(p.cur!)}.`
           : `Estimate with multiplication: ${M(`${p.d} × ${p.q} = ${p.d! * p.q!}`)} fits, but ${M(`${p.d} × ${p.q! + 1} = ${p.over}`)} is bigger than ${M(p.cur!)}.`,
-        A
-          ? `اكتب ${M(p.q!)} فوق الرقم ${M(sol.digits[p.col!])} في خانة ${place}.`
-          : `Write ${M(p.q!)} above the digit ${M(sol.digits[p.col!])}, in the ${place} column.`,
+        school
+          ? A
+            ? `اكتب ${M(p.q!)} على اليمين تحت المقسوم عليه، بجانب أرقام الناتج السابقة. هذا الرقم يخص خانة ${place}.`
+            : `Write ${M(p.q!)} on the right, under the divisor, next to the earlier quotient digits. It belongs to the ${place} place.`
+          : A
+            ? `اكتب ${M(p.q!)} فوق الرقم ${M(sol.digits[p.col!])} في خانة ${place}.`
+            : `Write ${M(p.q!)} above the digit ${M(sol.digits[p.col!])}, in the ${place} column.`,
       ];
       const why = p.zero
         ? A
           ? `${M(p.cur!)} أصغر من ${M(p.d)}، فيتسع ${M(0)} مرة. يجب أن نكتب ${M(0)} في خانة ${place}. الصفر يحفظ مكان الأرقام، وبدونه يصبح الناتج أصغر بكثير.`
           : `${M(p.cur!)} is smaller than ${M(p.d)}, so it fits ${M(0)} times. We must still write ${M(0)} in the ${place} column. The zero holds the place so every other digit stays in the right position. Without it the answer would be far too small.`
-        : A
-          ? 'نكتب رقم الناتج دائماً فوق آخر رقم أخذناه.'
-          : 'A quotient digit is always written above the LAST digit we used.';
+        : school
+          ? A ? 'نكتب أرقام الناتج بالترتيب تحت المقسوم عليه.' : 'Quotient digits are written in order, under the divisor.'
+          : A
+            ? 'نكتب رقم الناتج دائماً فوق آخر رقم أخذناه.'
+            : 'A quotient digit is always written above the LAST digit we used.';
       return { title: A ? 'اقسم' : 'Divide', lines, why };
     }
     case 'multiply':
@@ -183,7 +189,7 @@ export function explainStep(s: Step, sol: Solution, lang: Lang): Explanation {
 }
 
 /** Explains what a tapped number on the board is doing right now. */
-export function explainCell(c: Cell, step: number, sol: Solution, lang: Lang): string {
+export function explainCell(c: Cell, step: number, sol: Solution, lang: Lang, school = false): string {
   const A = ar(lang);
   const m = c.meta ?? {};
   switch (c.role) {
@@ -200,8 +206,8 @@ export function explainCell(c: Cell, step: number, sol: Solution, lang: Lang): s
         : `${M(sol.d)} is the divisor. We divide by it in every round.`;
     case 'quotient':
       return A
-        ? `${M(c.text)} رقم من الناتج: ${M(`${m.cur} ÷ ${m.d} = ${m.q}`)}. كُتب فوق آخر رقم استخدمناه.`
-        : `${M(c.text)} is a digit of the answer: ${M(`${m.cur} ÷ ${m.d} = ${m.q}`)}. It sits above the last digit we used.`;
+        ? `${M(c.text)} رقم من الناتج: ${M(`${m.cur} ÷ ${m.d} = ${m.q}`)}. ${school ? 'كُتب تحت المقسوم عليه بالترتيب.' : 'كُتب فوق آخر رقم استخدمناه.'}`
+        : `${M(c.text)} is a digit of the answer: ${M(`${m.cur} ÷ ${m.d} = ${m.q}`)}. ${school ? 'It is written under the divisor, in order.' : 'It sits above the last digit we used.'}`;
     case 'product':
       return A
         ? `الصف ${M(m.prod!)} هو ${M(`${m.q} × ${m.d}`)}. سنطرحه من ${M(m.cur!)}.`
@@ -222,7 +228,7 @@ export function explainCell(c: Cell, step: number, sol: Solution, lang: Lang): s
 }
 
 /** Hints for the guided solver. level 1 is gentle, level 2 is much clearer. */
-export function promptText(p: Prompt, sol: Solution, lang: Lang): { ask: string; hint1: string; hint2: string } {
+export function promptText(p: Prompt, sol: Solution, lang: Lang, school = false): { ask: string; hint1: string; hint2: string } {
   const A = ar(lang);
   const q = p.params;
   const d = sol.d;
@@ -246,8 +252,10 @@ export function promptText(p: Prompt, sol: Solution, lang: Lang): { ask: string;
       };
     case 'place':
       return {
-        ask: A ? `أين نكتب ${M(q.q!)}؟ اضغط على الرقم الذي سيكون الناتج فوقه.` : `Where do we write ${M(q.q!)}? Tap the digit it should sit above.`,
-        hint1: A ? 'نكتب رقم الناتج فوق آخر رقم أخذناه من المقسوم.' : 'A quotient digit goes above the LAST digit we took from the dividend.',
+        ask: school
+          ? A ? `اضغط على آخر رقم أخذناه من المقسوم. سنكتب ${M(q.q!)} على اليمين تحت المقسوم عليه.` : `Tap the LAST digit we took from the dividend. Then ${M(q.q!)} is written on the right, under the divisor.`
+          : A ? `أين نكتب ${M(q.q!)}؟ اضغط على الرقم الذي سيكون الناتج فوقه.` : `Where do we write ${M(q.q!)}? Tap the digit it should sit above.`,
+        hint1: A ? 'رقم الناتج يخص آخر رقم أخذناه من المقسوم.' : 'A quotient digit belongs to the LAST digit we took from the dividend.',
         hint2: A ? `آخر رقم أخذناه هو الرقم ${M(sol.digits[q.col!])}.` : `The last digit we took is ${M(sol.digits[q.col!])}.`,
       };
     case 'multiply':
